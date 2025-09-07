@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 
 def graficar_imagen_e_histograma(imagen, histograma,
-
                                  cmap: any = "gray",
                                  vmin: float = 0,
                                  vmax: float = 255,
