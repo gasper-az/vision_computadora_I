@@ -24,3 +24,13 @@ def graficar_2_histogramas(histograma1, histograma2,
     ax2 = plt.subplot(212)
     ax2.plot(histograma2)
     ax2.set_title(title2)
+
+def graficar_2_imagenes(imagen1, imagen2, title1: str = "Imagen 1", title2: str = "Imagen 2"):
+    fig = plt.figure()
+    ax1 = plt.subplot(121)
+    ax1.imshow(imagen1)
+    ax1.set_title(title1)
+
+    ax2 = plt.subplot(122)
+    ax2.imshow(imagen2)
+    ax2.set_title(title2)
