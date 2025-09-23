@@ -1,14 +1,41 @@
 import cv2 as cv
 import numpy as np
+from enum import Enum
+
+class QualityMeasure(Enum):
+    IMAGE_SHARPNESS_MEASURE = 1
+    TENENGRAD_FOCUS_MEASURE = 2
+    BRENNER_GRADIENT_FOCUS_MEASURE = 3
+    VARIANCE_OF_LAPLACIAN_FOCUS_MEASURE = 4
 
 class ImageQuality:
     def __init__(self):
         pass
 
-    # Implementación del algoritmo definido en el Paper Image Sharpness MEasure for Blurred Images in Frequency.
+    def imageQualityMeasure(self, image: cv.typing.MatLike, roiPercentage: float = 1.0,
+                            measure: QualityMeasure = QualityMeasure.IMAGE_SHARPNESS_MEASURE) -> float:
+
+        if roiPercentage != 1.0:
+            image = self.__getROIFromImage__(image=image, percentage=roiPercentage)
+
+        quality = 0.0
+
+        match measure:
+            case QualityMeasure.TENENGRAD_FOCUS_MEASURE:
+                quality = self.tenengradFocusMeasure(image=image)
+            case QualityMeasure.BRENNER_GRADIENT_FOCUS_MEASURE:
+                quality = self.brennerGradientFocusMeasure(image=image)
+            case QualityMeasure.VARIANCE_OF_LAPLACIAN_FOCUS_MEASURE:
+                quality = self.varianceOfLaplacianFocusMeasure(image=image)
+            case _: # QualityMeasure.IMAGE_SHARPNESS_MEASURE
+                quality = self.imageSharpnessMeasure(image=image)
+        
+        return quality
+
+    # Implementación del algoritmo definido en el Paper Image Sharpness Measure for Blurred Images in Frequency.
     # Input: imagen de tamaño MxN
     # Output: medición de la calidad de la imagen.
-    def imageQualityMeasure(self, image: cv.typing.MatLike, roiPercentage: float = 1.0) -> float:
+    def imageSharpnessMeasure(self, image: cv.typing.MatLike) -> float:
 
         # Pasos del algoritmo:
         # Step 1: Compute F which is the Fourier Transform representation of image I   
@@ -17,9 +44,6 @@ class ImageQuality:
         # Step 4: Calculate M = max (AF) where M is the maximum value of the frequency component in F. 
         # Step 5: Calculate TH = the total number of pixels in F whose pixel value > thres, where thres = M/1000. 
         # Step 6: Calculate Image Quality measure (FM) from equation TH/(MxN).
-
-        if roiPercentage != 1.0:
-            image = self.__getROIFromImage__(image=image, percentage=roiPercentage)
 
         # Paso 1: se computa F (transformada de fourier).
         F = np.fft.fft2(image)
@@ -47,7 +71,7 @@ class ImageQuality:
 
     # Implementación de la métrica definida en el Paper Analysis of Focus Measure Operators.
     # Más info sobre esta métrica: https://opencv.org/blog/autofocus-using-opencv-a-comparative-study-of-focus-measures-for-sharpness-assessment/
-    def tenengradFocusMeasure(self, image: cv.typing.MatLike, roiPercentage: float = 1.0) -> float:
+    def tenengradFocusMeasure(self, image: cv.typing.MatLike) -> float:
         # Métrica = SUM_i_j(G_x(i, j)^2 + G_y(i, j)^2)
         # Donde
         #   G_x = magnitud del gradiente computados mediante la convolución de la imagen con operador de Sobel en X.
@@ -68,7 +92,7 @@ class ImageQuality:
     
     # Implementación de la métrica definida en el Paper Analysis of Focus Measure Operators.
     # Más info sobre esta métrica: https://opencv.org/blog/autofocus-using-opencv-a-comparative-study-of-focus-measures-for-sharpness-assessment/
-    def brennerGradientFocusMeasure(self, image: cv.typing.MatLike, roiPercentage: float = 1.0) -> float:
+    def brennerGradientFocusMeasure(self, image: cv.typing.MatLike) -> float:
         # Métrica = SUM_i_j(ABS(I(i,j) - I(i+2j))^2)
         #   I(i, j) es el pixel ubicado en la posición i, j
         #   I(i + 2j) es el pixel ubicado en dos posiciones de manera horizontal
@@ -87,7 +111,7 @@ class ImageQuality:
     
     # Implementación de la métrica definida en el Paper Analysis of Focus Measure Operators.
     # Más info sobre esta métrica: https://opencv.org/blog/autofocus-using-opencv-a-comparative-study-of-focus-measures-for-sharpness-assessment/
-    def varianceOfLaplacianFocusMeasure(self, image: cv.typing.MatLike, roiPercentage: float = 1.0) -> float:
+    def varianceOfLaplacianFocusMeasure(self, image: cv.typing.MatLike) -> float:
         # Métrica = SUM_i_j(Delta(i, j) - Delta(I))^2
         #   Delta(I) es el valor medio del Laplaciano de la imagen
 
