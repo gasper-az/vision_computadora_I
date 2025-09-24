@@ -1,7 +1,7 @@
 import cv2 as cv
 import numpy as np
 from enum import Enum
-
+from typing import Optional, Tuple
 class QualityMeasure(Enum):
     IMAGE_SHARPNESS_MEASURE = 1
     TENENGRAD_FOCUS_MEASURE = 2
@@ -12,8 +12,13 @@ class ImageQuality:
     def __init__(self):
         pass
 
-    def imageQualityMeasure(self, image: cv.typing.MatLike, roiPercentage: float = 1.0,
+    def imageQualityMeasure(self, image: cv.typing.MatLike,
+                            unsharpMasking:Optional[Tuple[float, float]] = None,
+                            roiPercentage: float = 1.0,
                             measure: QualityMeasure = QualityMeasure.IMAGE_SHARPNESS_MEASURE) -> float:
+ 
+        if unsharpMasking is not None and isinstance(unsharpMasking, Tuple):
+            image = self.__unsharpMasking__(image=image, sigma=unsharpMasking[0], strength=unsharpMasking[1])
 
         if roiPercentage != 1.0:
             image = self.__getROIFromImage__(image=image, percentage=roiPercentage)
@@ -36,6 +41,9 @@ class ImageQuality:
     # Input: imagen de tamaño MxN
     # Output: medición de la calidad de la imagen.
     def imageSharpnessMeasure(self, image: cv.typing.MatLike) -> float:
+
+        if len(image.shape) == 3:
+            image = image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
         # Pasos del algoritmo:
         # Step 1: Compute F which is the Fourier Transform representation of image I   
@@ -142,3 +150,10 @@ class ImageQuality:
         roi = image[start_y:end_y, start_x:end_x]
 
         return roi
+
+    # Aplica UnsharpMasking.
+    def __unsharpMasking__(self, image: cv.typing.MatLike, sigma:float = 1.0, strength:float = 1.5):
+        # Fuente: https://www.opencvhelp.org/tutorials/image-processing/how-to-sharpen-image/
+        blurred = cv.GaussianBlur(image, (0,0), sigmaX=sigma)
+        sharpened = cv.addWeighted(image, 1.0 + strength, blurred, -strength, 0)
+        return sharpened
