@@ -1,6 +1,7 @@
 import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
+from typing import Tuple
 
 class PreprocessingData:
     """
@@ -72,7 +73,7 @@ class TemplateMatching:
         self.processedImage = imageGaussianPyramid
         self.processedTemplate = templateGaussianPyramid
 
-    def templateMatching(self, metrica: int, threshold: float, template_title: str, target_title: str, final_title: str, graficar: bool = True) -> list:
+    def templateMatching(self, metrica: int, threshold: float, template_title: str, target_title: str, final_title: str, graficar: bool = True) -> Tuple[list, list]:
         """
         Aplica template matching sobre la imagen y el template configurados.
         Source:
@@ -89,7 +90,9 @@ class TemplateMatching:
             graficar (bool): Indica si se debe realizar un gráfico de resultados o no.
         
         Returns:
-            list: lista de coordenadas que representan detecciones del template en la imagen de origen/target.
+            Tuple[list, list]:
+                lista de coordenadas que representan detecciones del template en la imagen de origen/target.
+                lista que representa los scores obtenidos.
 
         Raises:
             TypeError: Si no se llamó anteriormente a preprocesar.
@@ -120,8 +123,14 @@ class TemplateMatching:
         pick = self.__nonMaxSuppression__(np.array(rects))
         
         for (startX, startY, endX, endY) in pick:
+            score = res[startY,startX]
             cv.rectangle(img_salida, (startX, startY), (endX, endY),
                 (0, 0, 255), 2)
+            
+            label_text = f"Score: {score:.2f}"
+            
+            cv.putText(img_salida, label_text, (startX, startY - 10),
+                cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         if graficar:
             ### Gráficos
@@ -138,7 +147,7 @@ class TemplateMatching:
             plt.imshow(img_salida)
             plt.title(final_title)
 
-        return pick
+        return pick, res
     
     def __gaussianPyramids__(self, img: cv.typing.MatLike, level: int = 2) -> cv.typing.MatLike:
         """
